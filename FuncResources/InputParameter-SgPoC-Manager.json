@@ -1,0 +1,21 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "Environment",
+            "ParameterValue": "SgPoC"
+        },
+        {
+            "ParameterKey": "KeyName",
+            "ParameterValue": "AWS_nobuyuf_common"
+        },
+        {
+            "ParameterKey": "InstanceType",
+            "ParameterValue": "t3.large"
+        }
+
+    ]
+}
+
+
+
+

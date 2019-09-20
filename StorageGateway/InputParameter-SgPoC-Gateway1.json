@@ -1,0 +1,25 @@
+{
+    "Parameters": [
+        {
+            "ParameterKey": "Environment",
+            "ParameterValue": "SgPoC"
+        },
+        {
+            "ParameterKey": "KeyName",
+            "ParameterValue": "AWS_nobuyuf_common"
+        },
+        {
+            "ParameterKey": "AmiId",
+            "ParameterValue": "ami-0993599be69ef343c"
+        },
+        {
+            "ParameterKey": "InstanceType",
+            "ParameterValue": "m4.xlarge"
+        }
+
+    ]
+}
+
+
+
+

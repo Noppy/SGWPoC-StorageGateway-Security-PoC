@@ -1,0 +1,156 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy VPCEndpoints
+#----------------------------------------------
+Parameters:
+  #------------------
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+
+#----------------------------------------------
+Resources:
+  #------------------ Security Groups
+  VPCEndpointSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-VPCEndpointForStorageGatewaySG
+      GroupDescription: Allow Manager and Gateway Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-VPCEndpointForStorageGatewaySG
+  #---
+  AllowInboundFromGatewaySGHttps:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VPCEndpointSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-StorageGwSGId
+  AllowInboundFromGatewaySGOther1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VPCEndpointSG
+      IpProtocol: tcp
+      FromPort: 1026
+      ToPort: 1028
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-StorageGwSGId
+  AllowInboundFromGatewaySGOther2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VPCEndpointSG
+      IpProtocol: tcp
+      FromPort: 1031
+      ToPort: 1031
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-StorageGwSGId
+  AllowInboundFromGatewaySGOther3:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VPCEndpointSG
+      IpProtocol: tcp
+      FromPort: 2222
+      ToPort: 2222
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-StorageGwSGId
+  #---
+  AllowInboundFromManagerSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref VPCEndpointSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-ManagerSGId
+  #------------------VPC Endpoint
+  StorageGatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.storagegateway
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
+      SecurityGroupIds: 
+            - !Ref VPCEndpointSG
+  #-------------------------------  
+  #---  For STS
+  #-------------------------------
+  #VPCEndpointForStsSG:
+  #  Type: AWS::EC2::SecurityGroup
+  #  Properties:
+  #    GroupName: !Sub ${Environment}-VPCEndpointForStsSG
+  #    GroupDescription: Allow Gateway Instances
+  #    VpcId: 
+  #      Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+  #    Tags:
+  #      - Key: Name
+  #        Value: !Sub ${Environment}-VPCEndpointForStsSG
+  #---
+  #StsAllowInboundFromGatewaySGHttps:
+  #  Type: AWS::EC2::SecurityGroupIngress
+  #  Properties:
+  #    GroupId: !Ref VPCEndpointSG
+  #    IpProtocol: tcp
+  #    FromPort: 443
+  #    ToPort: 443
+  #    SourceSecurityGroupId:
+  #      Fn::ImportValue: !Sub ${Environment}-Sg-StorageGwSGId
+  #StsEndpoint:
+  #  Type: AWS::EC2::VPCEndpoint
+  #  Properties:
+  #    VpcId: 
+  #      Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+  #    ServiceName: !Sub com.amazonaws.${AWS::Region}.sts
+  #    VpcEndpointType: Interface
+  #    PrivateDnsEnabled: yes
+  #    SubnetIds:
+  #      - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+  #      - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
+  #    SecurityGroupIds: 
+  #          - !Ref VPCEndpointForStsSG
+  #-------------------------------  
+  #---  For Logs
+  #-------------------------------
+  LogsVPCEndpointSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-LogsVPCEndpointSG
+      GroupDescription: Allow Gateway Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-LogsVPCEndpointSG
+  LogsAllowInboundFromGatewaySGHttps:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref LogsVPCEndpointSG
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-Sg-StorageGwSGId
+  LogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.logs
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: yes
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2Id
+      SecurityGroupIds: 
+            - !Ref LogsVPCEndpointSG

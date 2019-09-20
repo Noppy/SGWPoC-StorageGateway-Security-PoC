@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy SecurityGroups
+#----------------------------------------------
+Parameters:
+  #------------------
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+
+#----------------------------------------------
+Resources:
+  #------------------ Security Groups
+  ClientSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-ClientSG
+      GroupDescription: For client Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-ClientSG
+  ClientSGIngressFromBastionSG:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ClientSG
+      IpProtocol: tcp
+      FromPort: 3389
+      ToPort: 3389
+      SourceSecurityGroupId:
+        Fn::ImportValue: !Sub ${Environment}-ExterSg-BastionSGId
+  # クライアントとのSMB接続(1)
+  #ClientGwSGIngressFromClientSmb1:
+  #  Type: AWS::EC2::SecurityGroupIngress
+  #  Properties:
+  #    GroupId: !Ref ClientSG
+  #    IpProtocol: tcp
+  #    FromPort: 139
+  #    ToPort: 139
+  #    SourceSecurityGroupId: !Ref StorageGwSG
+  # クライアントとのSMB接続(2)
+  #ClientGwSGIngressFromClientSmb1:
+  #  Type: AWS::EC2::SecurityGroupIngress
+  #  Properties:
+  #    GroupId: !Ref ClientSG
+  #    IpProtocol: tcp
+  #    FromPort: 445
+  #    ToPort: 445
+  #    SourceSecurityGroupId: !Ref StorageGwSG
+  #--
+  ManagerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-ManagerSG
+      GroupDescription: For Manager Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-ManagerSG
+  #--
+  StorageGwSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${Environment}-StorageGwSG
+      GroupDescription: For StorageGw Instances
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-StorageGwSG
+  # Managerインスタンスから,gatewayへのアクティベーションコード取得のため
+  StorageGwSGIngressFromManagerHttp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref StorageGwSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId: !Ref ManagerSG
+  # クライアントとのSMB接続(1)
+  StorageGwSGIngressFromClientSmb1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref StorageGwSG
+      IpProtocol: tcp
+      FromPort: 139
+      ToPort: 139
+      SourceSecurityGroupId: !Ref ClientSG
+  # クライアントとのSMB接続(2)
+  StorageGwSGIngressFromClientSmb2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref StorageGwSG
+      IpProtocol: tcp
+      FromPort: 445
+      ToPort: 445
+      SourceSecurityGroupId: !Ref ClientSG
+  # Managerインスタンスから,デバック用
+  #StorageGwSGIngressFromManagerSsh:
+  #  Type: AWS::EC2::SecurityGroupIngress
+  #  Properties:
+  #    GroupId: !Ref StorageGwSG
+  #    IpProtocol: tcp
+  #    FromPort: 22
+  #    ToPort: 22
+  #    SourceSecurityGroupId: !Ref ManagerSG
+Outputs:
+  #------------------ Security Group
+  ClientSGId:
+    Description: ClientSG Security Group Id
+    Value: !Ref ClientSG
+    Export:
+      Name: !Sub ${AWS::StackName}-ClientSGId
+  ManagerSGId:
+    Description: ManagerSG Security Group Id
+    Value: !Ref ManagerSG
+    Export:
+      Name: !Sub ${AWS::StackName}-ManagerSGId
+  StorageGwSG:
+    Description: StorageGwSG Security Group Id
+    Value: !Ref StorageGwSG
+    Export:
+      Name: !Sub ${AWS::StackName}-StorageGwSGId

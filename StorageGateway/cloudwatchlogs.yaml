@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy KMS, CloudWatch Logs and endpoint 
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+  #------------------
+#----------------------------------------------
+Resources:
+  CloudWatchLogsGateway1:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: StorageGW-Gateway-1
+  #------Put Log Policy
+  SendMessageInstancePolicy:
+    Type: AWS::IAM::Policy
+    Properties: 
+      PolicyName: !Sub "${Environment}-SendMessageInstancePolicy"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - 
+            Sid: "AllowToCreateAndListLogGroupsInOwnAccount"
+            Effect: Allow
+            Action:
+              - logs:DescribeLogGroups
+            Resource: "*"
+          - 
+            Sid: "AllowAccessToSpecifedResource"
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:DeleteLogStream
+              - logs:DescribeLogStreams
+              - logs:PutLogEvents
+            Resource:
+              - !GetAtt CloudWatchLogsGateway1.Arn
+      Roles:
+        - Fn::ImportValue: !Sub ${Environment}-Iam-StorageGatewayBucketAccessRoleName

@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy K8mgr Instances
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+  #------------------
+  InstanceType:
+    Description: (Optional) Instance type
+    Type: String
+    Default: t3.large
+  AmiId:
+    Description: (Optional) AMI ID
+    Type: String
+    Default: ami-00d101850e971728d
+  KeyName:
+    Description: (required) Name of an existing EC2 key pair
+    Type: "AWS::EC2::KeyPair::KeyName"
+  AutoRecoveryMinutes:
+    Description: (optional) Auto Recovery Time(Minutes)
+    Type: Number
+    Default: 1
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: Environment
+        Parameters: 
+          - Environment
+      -
+        Label:
+          default:  Instances
+        Parameters:
+          - InstanceType
+          - AmiId
+          - KeyName
+          - AutoRecoveryMinutes
+#----------------------------------------------
+Conditions: 
+  CheckAutoRecovery: !Not [!Equals [!Ref AutoRecoveryMinutes, 0 ]]
+#----------------------------------------------
+Resources:
+  #------------------ DockerDev:
+  Gateway:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub ${AmiId}
+      InstanceType: !Sub ${InstanceType}
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub ${Environment}-Iam-StorageGatewayPlofile
+      Monitoring: yes
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          SubnetId:
+            Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1Id
+          GroupSet:
+            - Fn::ImportValue: !Sub ${Environment}-Sg-StorageGwSGId
+          #AssociatePublicIpAddress: true
+      BlockDeviceMappings:
+        -
+          DeviceName: "/dev/xvda"
+          Ebs:
+            DeleteOnTermination: true
+            VolumeType: gp2
+            VolumeSize: 80
+        - 
+          DeviceName: "/dev/sdm"
+          Ebs: 
+            DeleteOnTermination: true
+            VolumeType: gp2
+            VolumeSize: 200
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-Gateway-1
+  AutoRecovery:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CheckAutoRecovery
+    Properties:
+      AlarmDescription: AutoRecovery for the Gateway
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed_System
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: !Ref AutoRecoveryMinutes
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - !Sub "arn:aws:automate:${AWS::Region}:ec2:recover"
+      - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:admin"
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref Gateway
+    DependsOn: Gateway
+  LocalDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName:
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
+      Comment: A record for the private IP address of the Gateway.
+      Name:
+        Fn::Join:
+          - ""
+          - - "Gateway."
+            - Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcInternalDnsName
+      Type: A
+      TTL: 60
+      ResourceRecords:
+        - !GetAtt Gateway.PrivateIp
+Outputs:
+  #---------------- EC2 Instance
+  GatewayId:
+    Description: Gateway Instance ID
+    Value: !Ref Gateway
+    Export:
+      Name: !Sub ${AWS::StackName}-GatewayId
+  GatewayPrivateIP:
+    Description: Bastion Instance Private IP
+    Value: !GetAtt Gateway.PrivateIp
+    Export:
+      Name: !Sub ${AWS::StackName}-GatewayPrivateIP

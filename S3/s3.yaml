@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy s3 and VPCEndpoint
+#----------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9=-@+?[?]?<?>._]*"
+    ConstraintDescription: Can contain only ASCII characters.
+    Description: (required) Environment name
+  #------------------
+  CfnRoleArn:
+    Type: String
+    Description: (required) Arn of IAM Role for Cfn 
+  #------------------
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: Environment
+        Parameters: 
+          - Environment
+          - CfnRoleArn
+#----------------------------------------------
+Resources:
+  #-----------------
+  StorageGatewayStoredS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+  #------------------ Add IAM policy
+  #------Put and Get S3 bucket
+  ResourceAdminPolicy:
+    Type: AWS::IAM::Policy
+    Properties: 
+      PolicyName: !Sub "${Environment}-PutGetS3Bucket"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "OperatBucket"
+            Effect: Allow
+            Action:
+              - s3:GetAccelerateConfiguration
+              - s3:GetBucketLocation
+              - s3:GetBucketVersioning
+              - s3:ListBucket
+              - s3:ListBucketVersions
+              - s3:ListBucketMultipartUploads
+            Resource:
+              - !GetAtt StorageGatewayStoredS3Bucket.Arn
+          - Sid: "PutAndGetObject"
+            Effect: Allow
+            Action:
+              - s3:AbortMultipartUpload
+              - s3:DeleteObject
+              - s3:DeleteObjectVersion
+              - s3:GetObject
+              - s3:GetObjectAcl
+              - s3:GetObjectVersion
+              - s3:ListMultipartUploadParts
+              - s3:PutObject
+              - s3:PutObjectAcl
+            Resource:
+              - !Sub
+                - "${S3Arn}/*"
+                - { S3Arn: !GetAtt StorageGatewayStoredS3Bucket.Arn }
+      Roles:
+        - Fn::ImportValue: !Sub ${Environment}-Iam-StorageGatewayBucketAccessRoleName
+  #------------------VPC Endpoint
+  S3VpcEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub ${Environment}-VpcFunc-VpcId
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      RouteTableIds:
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet1RouteTableId
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PrivateSubnet2RouteTableId
+        - Fn::ImportValue: !Sub ${Environment}-VpcFunc-PublicSubnetRouteTableId
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:*'
+            Resource:
+              # Allow connections to the Amazon Linux yum repositories
+              - "arn:aws:s3:::packages.*.amazonaws.com/*"
+              - "arn:aws:s3:::repo.*.amazonaws.com/*"
+              # Allow connections to the Amazon Linux2 yum repositories
+              - "arn:aws:s3:::amazonlinux.*.amazonaws.com/*"
+              # Allow connections to s3 buckets for CloudFormation custom resource request or a wait condition
+              # - !Sub "arn:aws:s3:::cloudformation-custom-resource-response-${AWS::Region}"   # allow trafic to buckes
+              # - !Sub "arn:aws:s3:::cloudformation-custom-resource-response-${AWS::Region}/*" # allow trafic to buckes
+              # - !Sub "arn:aws:s3:::cloudformation-waitcondition-${AWS::Region}"              # waiting condition
+              # - !Sub "arn:aws:s3:::cloudformation-waitcondition-${AWS::Region}/*"            # waiting condition
+              # Allow SSM
+              - !Sub "arn:aws:s3:::aws-ssm-${AWS::Region}/*"
+              - !Sub "arn:aws:s3:::aws-windows-downloads-${AWS::Region}/*"
+              - !Sub "arn:aws:s3:::region-birdwatcher-prod/*"
+              - !Sub "arn:aws:s3:::patch-baseline-snapshot-${AWS::Region}/*"
+              # For PoC S3Buckets
+              - !GetAtt StorageGatewayStoredS3Bucket.Arn
+              - !Sub
+                - "${S3Arn}/*"
+                - { S3Arn: !GetAtt StorageGatewayStoredS3Bucket.Arn }
+Outputs:
+  StorageGatewayStoredS3BucketId:
+    Description: name of StorageGatewayStoredS3Bucket
+    Value: !Ref StorageGatewayStoredS3Bucket
+    Export:
+      Name: !Sub ${AWS::StackName}-StorageGatewayStoredS3BucketId
+  StorageGatewayStoredS3BucketArn:
+    Description: arn of S3BucketTempFile
+    Value: !GetAtt StorageGatewayStoredS3Bucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-StorageGatewayStoredS3BucketArn
