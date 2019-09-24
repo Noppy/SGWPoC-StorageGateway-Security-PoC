@@ -224,9 +224,22 @@ aws storagegateway create-smb-file-share \
 ```
 ## (5) クライアントからのマウントテスト
 ```shell
+rem 共有接続と切断(ドライブレター割り当て)
 net use E: \\＜GatewayのIP>\＜S３バケット名と同一> /user:<Gateway名称>\smbguest
-```
+net use
+net use E: /delete
 
+rem 共有接続と切断(UNC、IPアドレスでの接続)
+net use \\＜GatewayのIP>\＜S３バケット名と同一> /user:<Gateway名称>\smbguest
+net use
+net use \\＜GatewayのIP>\＜S３バケット名と同一> /delete
+
+
+rem 共有接続と切断(UNC、FQDNでの接続)
+net use \\＜GatewayのFQDN＞\＜S３バケット名と同一> /user:<Gateway名称>\smbguest
+net use
+net use \\＜GatewayのFQDN＞\＜S３バケット名と同一> /delete
+```
 ## (6)Managerインスタンスからのsshメンテナンスログテインテスト
 ManagerインスタンスにSystem Managerでログインする
 ```shell
