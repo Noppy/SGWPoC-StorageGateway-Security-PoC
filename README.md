@@ -1,5 +1,10 @@
-# StorageGateway
-Security PoC for StorageGateway
+# StorageGateway検証環境
+StorageGateway(ファイルゲートウェイ)の検証環境を作成するCloudFormationと手順
+
+# 作成環境
+![CFn_configuration](./Documents/PoCArch.png)
+
+
 
 # 作成手順
 ## (1)ベースの構築
