@@ -23,7 +23,7 @@ Metadata:
           - CfnRoleArn
 #----------------------------------------------
 Resources:
-  #-----------------
+  #------------------ Buckets
   StorageGatewayStoredS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -32,8 +32,15 @@ Resources:
       Tags:
         - Key: Environment
           Value: !Ref Environment
+  StorageGatewayStoredS3Bucket2nd:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
   #------------------ Add IAM policy
-  #------Put and Get S3 bucket
   ResourceAdminPolicy:
     Type: AWS::IAM::Policy
     Properties: 
@@ -52,6 +59,7 @@ Resources:
               - s3:ListBucketMultipartUploads
             Resource:
               - !GetAtt StorageGatewayStoredS3Bucket.Arn
+              - !GetAtt StorageGatewayStoredS3Bucket2nd.Arn
           - Sid: "PutAndGetObject"
             Effect: Allow
             Action:
@@ -68,6 +76,9 @@ Resources:
               - !Sub
                 - "${S3Arn}/*"
                 - { S3Arn: !GetAtt StorageGatewayStoredS3Bucket.Arn }
+              - !Sub
+                - "${S3Arn}/*"
+                - { S3Arn: !GetAtt StorageGatewayStoredS3Bucket2nd.Arn }
       Roles:
         - Fn::ImportValue: !Sub ${Environment}-Iam-StorageGatewayBucketAccessRoleName
   #------------------VPC Endpoint
@@ -109,6 +120,10 @@ Resources:
               - !Sub
                 - "${S3Arn}/*"
                 - { S3Arn: !GetAtt StorageGatewayStoredS3Bucket.Arn }
+              - !GetAtt StorageGatewayStoredS3Bucket2nd.Arn
+              - !Sub
+                - "${S3Arn}/*"
+                - { S3Arn: !GetAtt StorageGatewayStoredS3Bucket2nd.Arn }
 Outputs:
   StorageGatewayStoredS3BucketId:
     Description: name of StorageGatewayStoredS3Bucket
@@ -120,3 +135,14 @@ Outputs:
     Value: !GetAtt StorageGatewayStoredS3Bucket.Arn
     Export:
       Name: !Sub ${AWS::StackName}-StorageGatewayStoredS3BucketArn
+  #--------
+  StorageGatewayStoredS3Bucket2ndId:
+    Description: name of StorageGatewayStoredS3Bucket2nd
+    Value: !Ref StorageGatewayStoredS3Bucket2nd
+    Export:
+      Name: !Sub ${AWS::StackName}-StorageGatewayStoredS3Bucket2ndId
+  StorageGatewayStoredS3Bucket2ndArn:
+    Description: arn of StorageGatewayStoredS3Bucket2nd
+    Value: !GetAtt StorageGatewayStoredS3Bucket2nd.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-StorageGatewayStoredS3Bucket2nd
