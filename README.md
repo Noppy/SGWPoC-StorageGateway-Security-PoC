@@ -50,16 +50,6 @@ do
 done
 ````
 
-
-:            "ParameterValue": "AWS_nobuyuf_common"
-:            "ParameterValue": "AWS_nobuyuf_common"
-:            "ParameterValue": "AWS_nobuyuf_common"
-:            "ParameterValue": "AWS_nobuyuf_common"
-:            "ParameterValue": "AWS_nobuyuf_common"
-
-
-
-
 ### (1)-(c) CloudFormationデプロイ 
 ```shell
 ./run_cfn.sh SgPoC Iam create

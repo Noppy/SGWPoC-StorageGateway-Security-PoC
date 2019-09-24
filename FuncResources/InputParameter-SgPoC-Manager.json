@@ -6,7 +6,7 @@
         },
         {
             "ParameterKey": "KeyName",
-            "ParameterValue": "AWS_nobuyuf_common"
+            "ParameterValue": "KEY_PAIR_NAME"
         },
         {
             "ParameterKey": "InstanceType",
