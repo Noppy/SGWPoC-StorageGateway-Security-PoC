@@ -42,11 +42,11 @@ Role="arn:aws:iam::999999999999:role/CloudFormationServiceRole" #先ほど作成
 ### (1)-(c) EC2キーペア設定
 
 ```shell
-KeyPairName="KEY_PAIR_NAME"
+KeyPairName="設定しているキーペア名称を設定"
 
 for i in ExterResources/InputParameter-SgPoC-Proxy.json ExterResources/InputParameter-SgPoC-Proxy.json ExterResources/InputParameter-SgPoC-Bastion.json FuncResources/InputParameter-SgPoC-Client.json FuncResources/InputParameter-SgPoC-Manager.json StorageGateway/InputParameter-SgPoC-Gateway1.json
 do
-    sed -i".bak" -e "s/AWS_nobuyuf_common/${KeyPairName}/g" ${i}
+    sed -i".bak" -e "s/KEY_PAIR_NAME/${KeyPairName}/g" ${i}
 done
 ````
 
