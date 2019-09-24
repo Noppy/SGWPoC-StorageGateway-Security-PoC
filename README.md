@@ -222,7 +222,47 @@ aws storagegateway create-smb-file-share \
     --guess-mime-type-enabled \
     --authentication GuestAccess
 ```
-## (5) クライアントからのマウント
+## (5) クライアントからのマウントテスト
 ```shell
 net use E: \\＜GatewayのIP>\＜S３バケット名と同一> /user:<Gateway名称>\smbguest
 ```
+
+## (6)Managerインスタンスからのsshメンテナンスログテインテスト
+ManagerインスタンスにSystem Managerでログインする
+```shell
+sudo -u ec2-user -i
+# キーペアの秘密鍵設定
+cat > ~/.ssh/id_rsa
+<キーペアの秘密鍵を入力し、"ctr＋d"で終了>
+chmod 600 ~/.ssh/id_rsa
+
+#ゲートウェイのIP取得
+Gateway1DNS=$(aws --output text ec2 describe-instances --query 'Reservations[*].Instances[*].PrivateIpAddress' --filters "Name=tag:Name,Values=SgPoC-Gateway-1" "Name=instance-state-name,Values=running")
+
+#sshログイン
+ssh admin@${Gateway1DNS}
+```
+Storage Gatewayのローカルコンソール
+```
+        AWS Storage Gateway - Configuration
+
+        #######################################################################
+        ##  Currently connected network adapters:
+        ##
+        ##  eth0: 10.1.167.130
+        #######################################################################
+
+        1: Configure HTTP Proxy
+        2: Network Configuration
+        3: Test Network Connectivity
+        4: View System Resource Check (0 Errors)
+        5: Command Prompt
+
+        Press "x" to exit session
+
+        Enter command:
+```
+参考
+https://docs.aws.amazon.com/ja_jp/storagegateway/latest/userguide/ec2-local-console-fwg.html#EC2_MaintenanceGatewayConsole-fgw
+
+
