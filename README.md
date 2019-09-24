@@ -48,9 +48,8 @@ for i in ExterResources/InputParameter-SgPoC-Proxy.json ExterResources/InputPara
 do
     sed -i".bak" -e "s/KEY_PAIR_NAME/${KeyPairName}/g" ${i}
 done
-````
-
-### (1)-(c) CloudFormationデプロイ 
+```
+### (1)-(d) CloudFormationデプロイ 
 ```shell
 ./run_cfn.sh SgPoC Iam create
 ./run_cfn.sh SgPoC VpcFunc create
