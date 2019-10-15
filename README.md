@@ -34,13 +34,13 @@ done
 ./run_cfn.sh SgPoC VpcPeer create
 ./run_cfn.sh SgPoC ExterSg create
 ./run_cfn.sh SgPoC Bastion create
+./run_cfn.sh SgPoC Proxy create
 ./run_cfn.sh SgPoC Vpce create
 ./run_cfn.sh SgPoC Sg create
 ./run_cfn.sh SgPoC S3 create
 
 ./run_cfn.sh SgPoC Client create
 ./run_cfn.sh SgPoC Manager create
-
 ```
 
 ## (2)StorageGatewayのVPC Endpointとファイルゲートウェイのインスタンスデプロイ

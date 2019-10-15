@@ -38,7 +38,7 @@ Resources:
         Fn::ImportValue: !Sub ${Environment}-VpcExter-VpcId
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-ProsySG
+          Value: !Sub ${Environment}-ProxySG
       SecurityGroupIngress:
         -
           IpProtocol: tcp
