@@ -17,9 +17,9 @@ EnvsLast=0
 ```
 
 ### (1)-(c) EC2キーペア設定
-
+"run_cfn.sh"があるディレクトリで下記コマンドを実行して、stackのパラメータ用JSONのキーペア設定を環境に合わせた内容に更新します。
 ```shell
-KeyPairName="設定しているキーペア名称を設定"
+KeyPairName="KEY_PAIR_NAME" #環境に合わせてキーペア名称を設定"
 
 for i in ExterResources/InputParameter-SgPoC-Proxy.json ExterResources/InputParameter-SgPoC-Proxy.json ExterResources/InputParameter-SgPoC-Bastion.json FuncResources/InputParameter-SgPoC-Client.json FuncResources/InputParameter-SgPoC-Manager.json StorageGateway/InputParameter-SgPoC-Gateway1.json
 do
@@ -50,6 +50,11 @@ done
 ./run_cfn.sh SgPoC Logs create
 ```
 ### (2)-(b) StorageGateway用 Gateway用EC2インスタンスのデプロイ
+
+デプロイ前に、"/StorageGateway/InputParameter-SgPoC-Gateway1.json"で、AMI-IDとインスタンスタイプを確認し、必要に応じて修正します。
+- AMI-ID: [StorageGatewayのユーザーガイドの](https://docs.aws.amazon.com/storagegateway/latest/userguide/ec2-gateway-file.html)「Amazon EC2 ホストで ファイルゲートウェイ をデプロイする」を参考に、最新のAMI-IDを設定します
+- インスタンスタイプ: c5.4xlargeを設定しているので、必要に応じて変更してください。
+
 ```shell
 ./run_cfn.sh SgPoC Gateway1 create
 
