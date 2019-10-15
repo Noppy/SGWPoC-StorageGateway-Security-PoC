@@ -13,8 +13,8 @@ Envs[0]=SgPoC;    ProfileList[0]=ExSPoC
 EnvsLast=1
 
 #CloudFormation ServiceRole
-Role="arn:aws:iam::709164018952:role/CloudFormationServiceRole"
-#Role="NULL"   # If a Service Role for cloudformation does not exist.
+#Role="arn:aws:iam::709164018952:role/CloudFormationServiceRole"
+Role="NULL"   # If a Service Role for cloudformation does not exist.
 
 
 #--------------
