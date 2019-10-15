@@ -69,11 +69,16 @@ done
 ```shell
 sudo -u ec2-user -i
 
-#AWS Cliアップデート
+# AWS cli初期設定
+Region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | sed -e 's/.$//')
+aws configure set region ${Region}
+aws configure set output json
+
 #FowardProxyIP=<FowardProxy IP Address>
-FowardProxyIP=10.2.128.108
+FowardProxyIP=$(aws --output text cloudformation describe-stacks --stack-name SgPoC-Proxy --query 'Stacks[].Outputs[?OutputKey==`ProxyInstance2PrivateIp`].[OutputValue]')
 FowardProxyPort=3128
 
+#AWS Cliアップデート
 curl -x http://${FowardProxyIP}:${FowardProxyPort} \
      -o "get-pip.py" \
      "https://bootstrap.pypa.io/get-pip.py" 
@@ -84,10 +89,7 @@ echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
 . ~/.bashrc
 
 
-# AWS cli初期設定
-Region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | sed -e 's/.$//')
-aws configure set region ${Region}
-aws configure set output json
+
 ```
 ### (3)-（b) アクティベーションキーの取得
 ファイルゲートウェイから、 アクティベーションキーを取得します。
