@@ -165,7 +165,7 @@ aws storagegateway update-gateway-information \
 - https://docs.aws.amazon.com/ja_jp/storagegateway/latest/userguide/GettingStartedCreateFileShare.html
 - https://docs.aws.amazon.com/ja_jp/storagegateway/latest/userguide/CreatingAnSMBFileShare.html
 
-### (4)-（a) SMB設定(SMBSecurityStrategy)
+### (4)-(a) SMB設定(SMBSecurityStrategy)
 ```shell
 GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{print $4}')
 
@@ -173,14 +173,14 @@ aws storagegateway update-smb-security-strategy \
     --gateway-arn ${GATEWAY_ARN} \
     --smb-security-strategy MandatoryEncryption
 ```
-### (4)-（b) ゲストアクセス用の SMB ファイル共有を設定
+### (4)-(b) ゲストアクセス用の SMB ファイル共有を設定
 ```shell
 PASSWORD="HogeHoge@"
 aws storagegateway set-smb-guest-password \
     --gateway-arn ${GATEWAY_ARN} \
     --password ${PASSWORD}
 ```
-### (4)-（c) SMBファイル共有
+### (4)-(c) SMBファイル共有
 ```shell
 #情報取得
 BUCKETARN=$(aws --output text cloudformation describe-stacks --stack-name SgPoC-S3 --query 'Stacks[*].Outputs[*].[OutputKey,OutputValue]' | awk -e '/StorageGatewayStoredS3BucketArn/{print $2}')
