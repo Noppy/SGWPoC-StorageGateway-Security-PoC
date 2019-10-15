@@ -88,8 +88,6 @@ pip install --upgrade --user awscli --proxy="http://${FowardProxyIP}:${FowardPro
 echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
 . ~/.bashrc
 
-
-
 ```
 ### (3)-（b) アクティベーションキーの取得
 ファイルゲートウェイから、 アクティベーションキーを取得します。
