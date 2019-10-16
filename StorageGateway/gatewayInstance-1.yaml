@@ -66,13 +66,15 @@ Resources:
           DeviceName: "/dev/xvda"
           Ebs:
             DeleteOnTermination: true
-            VolumeType: gp2
-            VolumeSize: 80
+            VolumeType: io1
+            Iops: 4000
+            VolumeSize: 500
         - 
           DeviceName: "/dev/sdm"
           Ebs: 
             DeleteOnTermination: true
-            VolumeType: gp2
+            VolumeType: io1
+            Iops: 1500
             VolumeSize: 200
       Tags:
         - Key: Name
