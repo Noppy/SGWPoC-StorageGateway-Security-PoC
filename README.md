@@ -117,7 +117,10 @@ aws storagegateway activate-gateway \
 
 #作成したGatewayのARN取得
 # atewayState"が "RUNNING"になるまで待つ
-GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{print $4}')
+aws storagegateway list-gateways
+
+#アクティベートしたゲートウェイの構成情報確認
+GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{ match($0, /arn:aws:storagegateway:\S*/); print substr($0, RSTART, RLENGTH) }')
 aws storagegateway describe-gateway-information --gateway-arn ${GATEWAY_ARN}
 
 ```
@@ -132,7 +135,7 @@ aws storagegateway describe-gateway-information --gateway-arn ${GATEWAY_ARN}
 ```shell
 
 #ローカルストレージの確認
-GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{print $4}')
+GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{ match($0, /arn:aws:storagegateway:\S*/); print substr($0, RSTART, RLENGTH) }')
 DiskIds=$(aws --output text storagegateway list-local-disks --gateway-arn ${GATEWAY_ARN} --query 'Disks[*].DiskId'| sed -e 's/\n/ /')
 echo ${DiskIds}
 
@@ -147,16 +150,23 @@ aws --output text storagegateway list-local-disks --gateway-arn ${GATEWAY_ARN}
 ```
 参照：https://docs.aws.amazon.com/ja_jp/storagegateway/latest/userguide/create-gateway-file.html
 
-### (4)-（e) CloudWatchログ設定
+### (3)-(e) CloudWatchログ設定
 ```shell
-GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{print $4}')
+GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{ match($0, /arn:aws:storagegateway:\S*/); print substr($0, RSTART, RLENGTH) }')
 Region=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | sed -e 's/.$//')
 AccuntId=$(curl -s http://169.254.169.254/latest/meta-data/identity-credentials/ec2/info|awk '/AccountId/{ i=gsub( /"/, "", $3); print $3}')
+echo "GATEWAY_ARN=$GATEWAY_ARN  Region=${Region} AccuntId=${AccuntId}"
 
 aws storagegateway update-gateway-information \
     --gateway-arn ${GATEWAY_ARN} \
-    --cloud-watch-log-group-arn "arn:aws:logs:a${Region}:${AccuntId}:log-group:StorageGW-Gateway-1"
+    --cloud-watch-log-group-arn "arn:aws:logs:${Region}:${AccuntId}:log-group:StorageGW-Gateway-1"
 ```
+
+### (3)-(e) TimeServer問題の回避策(Private Hosted-zoneを利用した対策)
+別途作成
+
+### (3)-(f) CloudWatch AlarmによるS3へのFileBackd完了通知設定
+別途作成
 
 ## (４) ファイル共有の作成
 とりあえず、「ゲストアクセスによる SMB ファイル共有」で簡易確認
@@ -186,11 +196,12 @@ aws storagegateway set-smb-guest-password \
 BUCKETARN=$(aws --output text cloudformation describe-stacks --stack-name SgPoC-S3 --query 'Stacks[*].Outputs[*].[OutputKey,OutputValue]' | awk -e '/StorageGatewayStoredS3BucketArn/{print $2}')
 ROLE=$(aws --output text cloudformation describe-stacks --stack-name SgPoC-Iam --query 'Stacks[*].Outputs[*].[OutputKey,OutputValue]' |awk -e '/StorageGatewayBucketAccessRoleArn/{print $2}')
 GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{print $4}')
-echo -e "BUCKET=${BUCKETARN}\nROLE=${ROLE}\nGATEWAY_ARN=${GATEWAY_ARN}"
+CLIENT_TOKEN=$(cat /dev/urandom | base64 | fold -w 38 | sed -e 's/[\/\+\=]/0/g' | head -n 1)
+echo -e "BUCKET=${BUCKETARN}\nROLE=${ROLE}\nGATEWAY_ARN=${GATEWAY_ARN}\nCLIENT_TOKEN=${CLIENT_TOKEN}"
 
 #実行
 aws storagegateway create-smb-file-share \
-    --client-token aaaaaaaaaa \
+    --client-token ${CLIENT_TOKEN} \
     --gateway-arn "${GATEWAY_ARN}" \
     --location-arn "${BUCKETARN}" \
     --role "${ROLE}" \
@@ -256,3 +267,20 @@ Storage Gatewayのローカルコンソール
 https://docs.aws.amazon.com/ja_jp/storagegateway/latest/userguide/ec2-local-console-fwg.html#EC2_MaintenanceGatewayConsole-fgw
 
 
+
+## (7) ファイルゲートウェイのリフレッシュ
+
+```shell
+
+#FileShareARNの確認
+GATEWAY_ARN=$(aws --output text storagegateway list-gateways |awk '/SgPoC-Gateway-1/{print $4}')
+aws storagegateway list-file-shares --gateway-arn ${GATEWAY_ARN}
+
+FILE_SHARE_ARN="上記結果より対象となるファイル共有のARNを設定"
+FOLDER_LIST="/ "    #設定例"/ /xxxx/ /yyyy/zzz/"。デフォルトは、”/"
+
+# リフレッシュ実行
+aws storagegateway refresh-cache \
+    --file-share-arn ${FILE_SHARE_ARN} \
+    --folder-list ${FOLDER_LIST}
+```
