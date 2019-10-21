@@ -107,6 +107,33 @@ Resources:
       FromPort: 445
       ToPort: 445
       SourceSecurityGroupId: !Ref ClientSG
+  # クライアントとのNFS接続(1) NFS
+  StorageGwSGIngressFromClientNfs1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref StorageGwSG
+      IpProtocol: tcp
+      FromPort: 2049
+      ToPort: 2049
+      SourceSecurityGroupId: !Ref ClientSG
+  # クライアントとのNFS接続(2) rpcbind/sunrpc for NFSv3
+  StorageGwSGIngressFromClientNfs2: 
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref StorageGwSG
+      IpProtocol: tcp
+      FromPort: 111
+      ToPort: 111
+      SourceSecurityGroupId: !Ref ClientSG
+  # クライアントとのNFS接続(3) gensha for NFSv3
+  StorageGwSGIngressFromClientNfs3: 
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref StorageGwSG
+      IpProtocol: tcp
+      FromPort: 20048
+      ToPort: 20048
+      SourceSecurityGroupId: !Ref ClientSG
   # Managerインスタンスから,デバック用
   #StorageGwSGIngressFromManagerSsh:
   #  Type: AWS::EC2::SecurityGroupIngress
